@@ -1,0 +1,72 @@
+{% extends 'bootstrap_base.html' %}
+
+
+
+{% block head_scripts %}{% endblock %}
+
+
+
+{% block title %} Test Page {% endblock %}
+{% block body %}
+<div class="container">
+	<form class="form-signin" action="/signUp" method="post" role="form">
+		<h2 class="form-signin-heading">Please Sign Up </h2>
+		<input type="email" name="username" class="form-control" placeholder="Email address" required autofocus>
+		<input type="password" name="password" class="form-control" placeholder="Password" required>
+		<button class="btn btn-lg btn-primary btn-block" type="button">Register </button>
+	</form>
+</div>
+<div id='results'></div>
+{% endblock %}
+
+
+
+
+{% block scripts %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript>
+$(function() {
+    $('button').click(function() {
+        $.ajax({
+            url: '/signUpUser',
+            data: $('form').serialize(),
+            type: 'POST',
+            success: function(response) {
+            	$("#results").text(response);
+                console.log(response);
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+    });
+});
+</script>
+{#<!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript>
+$(function() {
+    $('button').click(function() {
+        $.ajax({
+            url: '/_test_background',
+            data: $('form').serialize(),
+            type: 'POST',
+            success: function(response) {
+                console.log(response);
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+    });
+});
+</script> -->#}
+{% endblock %}
+
+
+
+
+
+
+
+
+

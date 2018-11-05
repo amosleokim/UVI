@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang='en'>
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+        <link rel='stylesheet' href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.1.2/materia/bootstrap.min.css" crossorigin='anonymous'>
+
+
+        <!-- Temporary Custom Styling - 
+            To-Do: Put in separate styleesheet-->
+        <style>
+
+        .btn-vn-cls {
+          display: inline-block;
+          font-weight: 400;
+          text-align: center;
+          white-space: nowrap;
+          vertical-align: middle;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          user-select: none;
+          border: 1px solid;
+          padding: 0.375rem 0.75rem;
+          font-size: 1rem;
+          line-height: 1.5;
+          border-radius: 0.25rem;
+          transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+          font-weight: 400;
+          color: #007bff;
+          background-color: transparent;
+        }
+/*        .btn-link {
+          font-weight: 400;
+          color: #007bff;
+          background-color: gray;
+        }*/
+/*        .card-header {
+          padding: 0.0rem 0.0rem;
+          margin-bottom: 0;
+          background-color: rgba(0, 0, 0, 0.03);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        }*/
+        </style>
+
+        {% block head_scripts %}{% endblock %}
+
+        <title>{% block title %}{% endblock %}</title>
+    </head>
+    <body>
+        {% block body %}{% endblock %}
+
+        <!-- Optional JavaScript -->
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+
+        <!--https://gist.github.com/ImLiam/5e64bc4b2cea6b19f95ecc67602aa363-->
+        <!--Hover-to-stay Credit: https://stackoverflow.com/questions/15989591/how-can-i-keep-bootstrap-popover-alive-while-the-popover-is-being-hovered-->
+        <script>
+        $(function(){
+            // $("[data-toggle=popover]").popover({
+            //     html : true,
+            //     content: function() {
+            //         var content = $(this).attr("data-popover-content");
+            //         return $(content).children(".popover-body").html();
+            //     },
+            //     title: function() {
+            //         var title = $(this).attr("data-popover-content");
+            //         return $(title).children(".popover-heading").html();
+            //     }
+            // });
+            $("[data-toggle=popover]").popover({
+                html : true,
+                trigger: 'manual',
+                content: function() {
+                    var content = $(this).attr("data-popover-content");
+                    return $(content).children(".popover-body").html();
+                },
+                title: function() {
+                    var title = $(this).attr("data-popover-content");
+                    return $(title).children(".popover-heading").html();
+                }
+            })
+            .on('mouseenter', function () {
+                var _this = this;
+                $(this).popover('show');
+                $('.popover').on('mouseleave', function () {
+                    $(_this).popover('hide');
+                });
+            }).on('mouseleave', function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$('.popover:hover').length) {
+                        $(_this).popover('hide');
+                    }
+                });
+            });
+        });
+        </script>
+
+        <!--Used to select/unselect checkboxes in 'results.html'
+            Credit: https://stackoverflow.com/questions/4174751/how-to-check-all-checkboxes-in-current-form-with-jquery-->
+        <script>
+        $('.select_all').change(function() {
+          var checkboxes = $(this).closest('form').find(':checkbox');
+          if($(this).is(':checked')) {
+              checkboxes.attr('checked', 'checked');
+          } else {
+              checkboxes.removeAttr('checked');
+          }
+        });
+        </script>
+
+        {% block scripts %}{% endblock %}
+    </body>
+</html>

@@ -1,0 +1,104 @@
+{% extends 'bootstrap_base.html' %}
+{% block title %} Search Results {% endblock %}
+{% block body %}
+
+
+{% if null_results %}
+No Results Found
+{% else %}
+
+{# {{ form.crsf_token }} #}
+
+<div class='container'>
+  <ul class='nav nav-tabs' id='resultTab' role='tablist'>
+    {% for key in matched_ids.keys() %}
+    <!--Matched Elements is a dictionary with keys 'VerbNet', 'FrameNet', 'PropBank'...
+        The first tab, whichever is returned by the results, should be active-->
+    {% if loop.first %}
+    <li class='nav-item'>
+        <a class='nav-link active' id='{{key}}-tab' data-toggle='tab' href='#{{key}}_tab_pane' role='tab'>{{ key }}</a></li>
+    <!--Other tabs inactive-->
+    {% else %}
+    <li class='nav-item'>
+        <a class='nav-link' id='{{key}}-tab' data-toggle='tab' href='#{{key}}_tab_pane' role='tab' >{{ key }}</a></li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+
+  
+  <div class='tab-content' id='resultTabContent'>
+    {% for key in matched_ids.keys() %}
+    {% if key == 'VerbNet' %}
+    {% set vn_elements = matched_ids['VerbNet'] %}
+    <div id='{{key}}_tab_pane' class='tab-pane fade show active' role='tabpanel'">
+        {% if not vn_elements %}
+        <br />No results found for query: <br />
+        "{{query_string}}"
+        {% else %}
+        <br />{{ matched_ids['VerbNet'] | length }} result(s) matching query <br />
+        <!--BEGIN FORM:
+            On Submit, this form posts to route "_filtered_results" (see "uvi_flask.py"), which renders
+            "render_verbnet.html" (see "uvi_flask.py") in target <iframe id="filtered_results_panel"> in 
+            "search.html"-->
+        <form action='/_filtered_results' id='vn_filtered_elements' method='post' target='filtered_results_pane'>
+            <input name="sort_behavior" type="hidden" value={{sort_behavior}}>
+            <input name="resource_key" type="hidden" value="VerbNet"><br />
+            <input type="checkbox" class='select_all'> Select/Deselect All <br /><hr />
+            {% for vn_element in vn_elements %}
+            <input type='checkbox' value={{ vn_element }} name='vn_class_checkbox'>
+            <label for=name={{ vn_element }}>{{ vn_element }}</label><br />
+            {% endfor %}
+            <input type='submit' value='Show Results'>
+        </form>
+        <!--END FORM-->
+        {% endif %}
+    </div>
+
+    {% elif key == 'FrameNet' %}
+    {% set fn_elements = matched_ids['FrameNet'] %}
+    <div id='{{key}}_tab_pane' class='tab-pane fade' role='tabpanel'">
+        {% if not fn_elements %}
+        <br />No results found for query: <br />
+        "{{query_string}}"
+        {% else %}
+        <br />{{ matched_ids['FrameNet'] | length }} result(s) matching query <br />
+        <form action='/_filtered_results' id='fn_filtered_elements' method='post' target='filtered_results_pane'>
+            <input name="sort_behavior" type="hidden" value={{sort_behavior}}>
+            <input name="resource_key" type="hidden" value="FrameNet"><br />
+            <input type="checkbox" class='select_all'> Select/Deselect All <br /><hr />
+            {% for fn_element in fn_elements %}
+            <input type='checkbox' value={{ fn_element }} name='fn_class_checkbox'>
+            <label for=name={{ fn_element }}>{{ fn_element }}</label><br />
+            {% endfor %}
+            <input type='submit' value='Show Results'>
+        </form>
+        {% endif %}
+    </div>
+
+    {% elif key == 'PropBank' %}
+    {% set pb_elements = matched_ids['PropBank'] %}
+    <div id='{{key}}_tab_pane' class='tab-pane fade' role='tabpanel'">
+        {% if not pb_elements %}
+        <br />No results found for query: <br />
+        "{{query_string}}"
+        {% else %}
+        <br />{{ matched_ids['PropBank'] | length }} result(s) matching query <br />
+        <form action='/_filtered_results' id='pb_filtered_elements' method='post' target='filtered_results_pane'>
+            <input name="sort_behavior" type="hidden" value={{sort_behavior}}>
+            <input name="resource_key" type="hidden" value="PropBank"><br />
+            <input type="checkbox" class='select_all'> Select/Deselect All <br /><hr />
+            {% for pb_element in pb_elements %}
+            <input type='checkbox' value={{ pb_element }} name='pb_class_checkbox'>
+            <label for=name={{ pb_element }}>{{ pb_element }}</label><br />
+            {% endfor %}
+            <input type='submit' value='Show Results'>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+    <br />
+  </div>
+</div>
+{% endif %}
+{% endblock %}
