@@ -32,7 +32,7 @@ handler = EventHandler()
 notifier = pyinotify.Notifier(watch_manager, handler)
 
 wdd_vn = watch_manager.add_watch('../corpora/verbnet', pyinotify.ALL_EVENTS)
-wdd_vn_refs = watch_manager.add_watch('../reference_docs')
+wdd_vn_refs = watch_manager.add_watch('../reference_docs', pyinotify.ALL_EVENTS)
 wdd_pb = watch_manager.add_watch('../corpora/propbank/frames', pyinotify.ALL_EVENTS)
 wdd_fn = watch_manager.add_watch('../corpora/framenet', pyinotify.ALL_EVENTS)
 #wdd_on = watch_manager.add_watch('../corpora/ontonotes', pyinotify.ALL_EVENTS)
