@@ -227,7 +227,7 @@ def build_verbnet_collection():
 
 
 	#VN Reference Information (themrole defs, predicate defs, etc.)
-	predicate_definition_files = ['reference_docs/'+f for f in ['vn_verb_specific_predicates.tsv',
+	predicate_definition_files = ['../reference_docs/'+f for f in ['vn_verb_specific_predicates.tsv',
 	 'vn_semantic_predicates.tsv',
 	 'vn_constants.tsv']]
 
@@ -245,18 +245,22 @@ def build_verbnet_collection():
 
 	db.drop_collection('vn_predicates')
 	vn_pred_collection = db['vn_predicates']
-	add_predicate_defs('reference_docs/vn_semantic_predicates.tsv', vn_pred_collection)
+	add_predicate_defs('../reference_docs/vn_semantic_predicates.tsv', vn_pred_collection)
 
 	db.drop_collection('vn_constants')
 	vn_constant_collection = db['vn_constants']
-	add_predicate_defs('reference_docs/vn_constants.tsv', vn_constant_collection)
+	add_predicate_defs('../reference_docs/vn_constants.tsv', vn_constant_collection)
 
 	db.drop_collection('vn_verb_specific')
 	vn_verb_specific_collection = db['vn_verb_specific']
-	add_predicate_defs('reference_docs/vn_verb_specific_predicates.tsv', vn_verb_specific_collection)
+	add_predicate_defs('../reference_docs/vn_verb_specific_predicates.tsv', vn_verb_specific_collection)
 
 
-	html_dir = 'reference_docs/vn_themrole_html/'
+	from bs4 import BeautifulSoup
+	import os
+	import json
+
+	html_dir = '../reference_docs/vn_themrole_html/'
 	html_files = [html_dir + f for f in os.listdir(html_dir)]
 
 	themrole_defs = []
