@@ -15,6 +15,8 @@ from pymongo import MongoClient
 mongo_client = MongoClient()
 db = mongo_client['uvi_corpora']
 
+
+#VERBNET
 def build_verbnet_collection():
 	print('Building VN Collection...')
 	#VERBNET
@@ -224,6 +226,65 @@ def build_verbnet_collection():
 
 
 
+	#VN Reference Information (themrole defs, predicate defs, etc.)
+	predicate_definition_files = ['reference_docs/'+f for f in ['vn_verb_specific_predicates.tsv',
+	 'vn_semantic_predicates.tsv',
+	 'vn_constants.tsv']]
+
+	def add_predicate_defs(predicate_definition_file, mongo_collection):
+	    with open(predicate_definition_file, 'r') as definition_tsv:
+	        #skip first line (tsv heading)
+	        next(definition_tsv)
+	        for line in definition_tsv:
+	            pred_fields = line.split('\t')
+	            pred_name = pred_fields[0].split('(')[0].strip()
+	            pred_def = pred_fields[1]
+	            pred_args = pred_fields[2]
+	            pred_dict = {'name':pred_name, 'def':pred_def, 'args':pred_args}
+	            mongo_collection.insert_one(pred_dict)
+
+	db.drop_collection('vn_predicates')
+	vn_pred_collection = db['vn_predicates']
+	add_predicate_defs('reference_docs/vn_semantic_predicates.tsv', vn_pred_collection)
+
+	db.drop_collection('vn_constants')
+	vn_constant_collection = db['vn_constants']
+	add_predicate_defs('reference_docs/vn_constants.tsv', vn_constant_collection)
+
+	db.drop_collection('vn_verb_specific')
+	vn_verb_specific_collection = db['vn_verb_specific']
+	add_predicate_defs('reference_docs/vn_verb_specific_predicates.tsv', vn_verb_specific_collection)
+
+
+	html_dir = 'reference_docs/vn_themrole_html/'
+	html_files = [html_dir + f for f in os.listdir(html_dir)]
+
+	themrole_defs = []
+
+	for html_file in html_files:
+	    html_doc = open(html_file,'r')
+	    soup = BeautifulSoup(html_doc, 'html.parser')
+	    h3_tags = [t.get_text() for t in soup.find_all('h3')]
+	    
+	    themrole = str(soup.h2).split(':')[1].split('<')[0].strip()
+	    description = 'No description found'
+	    example = 'No examples found'
+	    
+	    for tag in h3_tags:
+	        tag_fields = tag.split(':')
+	        if tag_fields[0].strip() == 'Description':
+	            description = tag_fields[1].strip()
+	        elif tag_fields[0].strip() == 'Example':
+	            example = tag_fields[1].strip()
+	    
+	    themrole_dict = {'name':themrole, 'description':description, 'example':example}
+	    themrole_defs.append(themrole_dict)
+
+	db.drop_collection('vn_themroles')
+	vn_themroles_db = db['vn_themroles']
+	vn_themroles_db.insert_many(themrole_defs)
+
+
 	def get_themrole_fields(class_id, frame_json, themrole_name):
 	    #Get Class ID's for parent classes of current class (returned list includes the original class)
 	    themrole_name_stripped = themrole_name.strip('?').strip('_i').strip('_j').strip('Co-')
@@ -293,3 +354,129 @@ def build_verbnet_collection():
 	        for themrole_name in class_themrole_names:
 	            themrole_fields = get_themrole_fields(class_id, frame_json, themrole_name)
 	            vn_themrole_fields.insert_one({'class_id': class_id, 'frame_desc': frame_desc, 'themrole_name': themrole_name, 'themrole_fields': themrole_fields})
+
+
+
+#FRAMENET
+def parse_fn_def(definition_markup):
+    def_split = definition_markup.split('<ex>')
+    def_text_markup = def_split[0].strip()
+    examples_markup = [ex.replace('<ex>','').replace('</ex>','').strip() for ex in def_split[1:]]
+    return {'def_text_markup': def_text_markup, 'examples_markup': examples_markup}
+    
+def parse_frame_element(frame_element):
+    def_markup = frame_element['definitionMarkup'].replace('<def-root>','').replace('</def-root>','').strip()
+    return {'fe_name': frame_element['name'], 'core_type': frame_element['coreType'], 'abbrev': frame_element['abbrev'], 'def_markup': def_markup}
+
+def parse_lexical_unit(lexical_unit):
+    lu_name = ('_').join(lexical_unit['name'].split(' '))
+    return {'lu_name': lu_name, 'lu_def': lexical_unit['definition'], 'url': lexical_unit['URL']}
+
+from nltk.corpus.reader.framenet import FramenetCorpusReader
+
+def fn_to_mongo(frame):
+    frame_definition = parse_fn_def(frame['definitionMarkup'])
+    frame_elements = [parse_frame_element(frame['FE'][fe]) for fe in frame['FE'].keys()]
+    lexical_units = [parse_lexical_unit(frame['lexUnit'][lu]) for lu in frame['lexUnit'].keys()]
+    fn_frame = {'name': frame['name'], 'definition': frame_definition, 'elements': frame_elements, 'lexical_units': lexical_units, 'url': frame['URL'], 'resource_type': 'fn'}
+    return fn_frame
+
+fn = FramenetCorpusReader(path_framenet, [f for f in path_framenet if f.endswith('.xml')])
+frames = fn.frames()
+framenet_mongo = [fn_to_mongo(f) for f in frames]
+
+db.drop_collection('framenet')
+fn_collection = db['framenet']
+fn_collection.insert_many(framenet_mongo)
+
+
+#PROPBANK
+def parse_predicate(predicate):
+    def parse_roleset(roleset):
+        def parse_aliases(aliases):
+            alias_list = []
+            for alias in aliases:
+                alias_name = alias.text
+                pos = alias.get('pos')
+                fn = alias.get('framenet').split(' ') if alias.get('framenet') else ''
+                vn = alias.get('verbnet').split(' ') if alias.get('verbnet') else ''
+                alias_list.append({'alias_name': alias_name, 'pos': pos, 'fn': fn, 'vn': vn})
+            return alias_list
+        
+        def parse_roles(roles):
+            role_list = []
+            for role in roles:
+                descr = role.get('descr')
+                f = role.get('f')
+                n = role.get('n')
+                
+                vnroles_found = role.findall('vnrole')
+                if vnroles_found:
+                    vnroles = [vnrole.get('vncls')+'-'+vnrole.get('vntheta').lower() for vnrole in vnroles_found]
+                    
+                else:
+                    vnroles = None
+                role_list.append({'descr':descr, 'f': f, 'n': n, 'vnroles': vnroles})
+            return role_list
+        
+        def parse_examples(examples):
+            def parse_ex_args(args):
+                args_list = []
+                for arg in args:
+                    arg_text = arg.text
+                    f = arg.get('f')
+                    n = arg.get('n')
+                    args_list.append({'arg_text': arg_text, 'f':f, 'n':n})
+                return args_list
+            
+            def parse_ex_rel(rel):
+                if rel != None:
+                    rel_text = rel.text
+                    f = rel.get('f')
+                else:
+                    rel_text = ''
+                    f = ''
+                return {'rel_text': rel_text, 'f': f}
+
+            example_list = []
+            for example in examples:
+                example_name = example.get('name')
+                example_text = example.find('text').text
+                args = parse_ex_args(example.findall('arg'))
+                rel = parse_ex_rel(example.find('rel'))
+                
+                
+                example_list.append({'example_name': example_name, 'example_text': example_text, 'args': args, 'rel': rel})
+            
+            return example_list
+                    
+        roleset_id = roleset.get('id')
+        roleset_name = roleset.get('name')
+        aliases = parse_aliases(roleset.find('aliases'))
+        roles = parse_roles(roleset.find('roles'))
+        examples = parse_examples(roleset.findall('example'))
+        
+        return {'roleset_id': roleset_id, 'roleset_name': roleset_name, 'aliases': aliases, 'roles': roles, 'examples': examples}
+
+    lemma = predicate.get('lemma')
+    rolesets = [parse_roleset(r) for r in predicate.findall('roleset')]
+    
+    return {'lemma': lemma, 'rolesets': rolesets}
+
+def parse_pb_frame(pb_frame):
+    predicates = [parse_predicate(p) for p in pb_frame.findall('predicate')]
+    return {'predicates':predicates, 'resource_type': 'pb'}
+
+def pb_to_mongo(file):
+    with open(path_propbank+file,'r') as xml_file:
+        root = etree.parse(xml_file).getroot()
+        pb_frame = parse_pb_frame(root)
+        pb_frame['frameset_id'] = file[:-4]
+        return pb_frame
+    
+propbank_xml = [f for f in os.listdir(path_propbank) if f.endswith('.xml')]
+propbank_mongo = [pb_to_mongo(f) for f in propbank_xml]
+
+db.drop_collection('propbank')
+pb_collection = db['propbank']
+pb_collection.insert_many(propbank_mongo)
