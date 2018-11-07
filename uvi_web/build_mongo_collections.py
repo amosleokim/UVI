@@ -4,6 +4,7 @@ from pprint import pprint
 import nltk
 from lxml import etree
 import re
+from bs4 import BeautifulSoup
 
 path_framenet = '../corpora/framenet/'
 path_propbank = '../corpora/propbank/frames/'
@@ -254,11 +255,6 @@ def build_verbnet_collection():
 	db.drop_collection('vn_verb_specific')
 	vn_verb_specific_collection = db['vn_verb_specific']
 	add_predicate_defs('../reference_docs/vn_verb_specific_predicates.tsv', vn_verb_specific_collection)
-
-
-	from bs4 import BeautifulSoup
-	import os
-	import json
 
 	html_dir = '../reference_docs/vn_themrole_html/'
 	html_files = [html_dir + f for f in os.listdir(html_dir)]
